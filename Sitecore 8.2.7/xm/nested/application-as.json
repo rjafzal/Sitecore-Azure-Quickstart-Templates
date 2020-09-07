@@ -3,8 +3,8 @@
   "contentVersion": "1.0.0.0",
   "variables": {    
     "resourcesApiVersion": "2016-09-01",
-    "searchApiVersion": "2015-08-19",
-    "searchPreviewApiVersion": "2015-02-28-preview",
+    "searchApiVersion": "2017-11-11",
+    "searchManagementApiVersion": "2015-08-19",
     "searchServiceNameTidy": "[trim(toLower(parameters('searchServiceName')))]"
   },
   "parameters": {
@@ -106,6 +106,10 @@
       "type": "securestring",
       "minLength": 8,
       "defaultValue": "[concat(toUpper(uniqueString('cdweb', parameters('passwordSalt'))), uniqueString('cdweb', parameters('sqlServerPassword'), parameters('passwordSalt')), toUpper(uniqueString('cdweb', parameters('sitecoreAdminPassword'), parameters('passwordSalt'))), '4@')]"
+    },
+    "setCompatibilityLevelMsDeployPackageUrl":{
+      "type": "securestring",
+      "minLength": 1
     },
     "setTlsVersionMsDeployPackageUrl": {
       "type": "securestring",
@@ -244,6 +248,9 @@
           "cdWebSqlDatabasePassword": {
             "value": "[parameters('cdWebSqlDatabasePassword')]"
           },
+          "setCompatibilityLevelMsDeployPackageUrl": {
+            "value": "[parameters('setCompatibilityLevelMsDeployPackageUrl')]"
+          },
           "setTlsVersionMsDeployPackageUrl": {
             "value": "[parameters('setTlsVersionMsDeployPackageUrl')]"
           },
@@ -276,7 +283,7 @@
           },
 
           "cloudSearchConnectionString": {
-            "value": "[concat('serviceUrl=https://', variables('searchServiceNameTidy'), '.search.windows.net;apiVersion=', variables('searchPreviewApiVersion'), ';apiKey=', listAdminKeys(resourceId('Microsoft.Search/searchServices', variables('searchServiceNameTidy')), variables('searchApiVersion')).primaryKey)]"
+            "value": "[concat('serviceUrl=https://', variables('searchServiceNameTidy'), '.search.windows.net;apiVersion=', variables('searchApiVersion'), ';apiKey=', listAdminKeys(resourceId('Microsoft.Search/searchServices', variables('searchServiceNameTidy')), variables('searchManagementApiVersion')).primaryKey)]"
           },
 
           "applicationInsightsName": {

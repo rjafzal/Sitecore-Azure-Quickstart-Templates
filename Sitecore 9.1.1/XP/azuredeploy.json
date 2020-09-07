@@ -566,6 +566,11 @@
       "type": "securestring",
       "defaultValue": ""
     },
+    "setCompatibilityLevelMsDeployPackageUrl":{
+      "type": "securestring",
+      "minLength": 1,
+      "defaultValue": "https://github.com/Sitecore/Sitecore-Azure-Quickstart-Templates/releases/download/v1.5.0/SetCompatibilityLevel.scwdp.zip"
+    },
 
     "exmCryptographicKey": {
       "type": "securestring",
@@ -1269,6 +1274,9 @@
           "repMsDeployPackageUrl": {
             "value": "[parameters('repMsDeployPackageUrl')]"
           },
+          "setCompatibilityLevelMsDeployPackageUrl": {
+            "value": "[parameters('setCompatibilityLevelMsDeployPackageUrl')]"
+          },
 
           "securityClientIp": {
             "value": "[parameters('securityClientIp')]"
@@ -1737,7 +1745,7 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', concat(parameters('deploymentId'), '-infrastructure-cortex-prc-rep'))]",
-        "[resourceId('Microsoft.Resources/deployments', concat(parameters('deploymentId'), '-application-xc'))]"
+        "[resourceId('Microsoft.Resources/deployments', concat(parameters('deploymentId'), '-application-ma'))]"
       ]
     },
     {

@@ -4,7 +4,8 @@
   "variables": {
     "webApiVersion": "2015-08-01",
     "dbApiVersion": "2014-04-01-preview",
-    "searchApiVersion": "2015-02-28",
+    "searchApiVersion": "2017-11-11",
+    "searchManagementApiVersion": "2015-08-19",
     "redisApiVersion": "2016-04-01",
     "appInsightsApiVersion": "2014-08-01",
     "cmHostingPlanNameTidy": "[toLower(trim(parameters('cm.hostingplan.name')))]",
@@ -45,6 +46,11 @@
     "cd.webapp.name": {
       "type": "string",
       "defaultValue": "[concat(parameters('deploymentId'), '-cd')]"
+    },
+    "setcompatibilitylevel.msdeploy.packageurl": {
+      "type": "securestring",
+      "minLength": 1,
+      "defaultValue": "https://github.com/Sitecore/Sitecore-Azure-Quickstart-Templates/releases/download/v1.5.0/SetCompatibilityLevel.scwdp.zip"
     },
     "cm.msdeploy.packageurl": {
       "type": "securestring"
@@ -243,6 +249,11 @@
       "type": "securestring",
       "minLength": 1,
       "defaultValue": "https://github.com/Sitecore/Sitecore-Azure-Quickstart-Templates/releases/download/v2.2.1/set_tlsVersion.scwdp.zip"
+    },
+    "SC2019-002-312864.msdeploy.packageurl": {
+      "type": "securestring",
+      "minLength": 1,
+      "defaultValue": "https://github.com/Sitecore/Sitecore-Azure-Quickstart-Templates/raw/master/Security%20patches/SC2019-002-312864/8.2/SC2019-002-312864.zip"
     },
 
     "sitecoreSKU" : {
@@ -510,6 +521,24 @@
                 }
               },
               {
+                "packageUri": "[parameters('setcompatibilitylevel.msdeploy.packageurl')]",
+                "dbType": "SQL",
+                "connectionString": "[concat('Data Source=tcp:', reference(concat('Microsoft.Sql/servers/', variables('webDbServerNameTidy'))).fullyQualifiedDomainName, ',1433;Initial Catalog=master;User Id=', parameters('sqlserver.login'), '@', variables('dbServerNameTidy'), ';Password=', parameters('sqlserver.password'), ';')]",
+                "setParameters": {
+                  "Application Path": "[variables('cmWebAppNameTidy')]",
+                  "Admin Connection String": "[concat('Encrypt=True;TrustServerCertificate=False;Data Source=', reference(concat('Microsoft.Sql/servers/', variables('dbServerNameTidy'))).fullyQualifiedDomainName, ',1433;Initial Catalog=master;User Id=', parameters('sqlserver.login'), ';Password=', parameters('sqlserver.password'), ';')]"
+                }
+              },
+              {
+                "packageUri": "[parameters('setcompatibilitylevel.msdeploy.packageurl')]",
+                "dbType": "SQL",
+                "connectionString": "[concat('Data Source=tcp:', reference(concat('Microsoft.Sql/servers/', variables('dbServerNameTidy'))).fullyQualifiedDomainName, ',1433;Initial Catalog=master;User Id=', parameters('web.sqlserver.login'), '@', variables('webDbServerNameTidy'), ';Password=', parameters('web.sqlserver.password'), ';')]",
+                "setParameters": {
+                  "Application Path": "[variables('cmWebAppNameTidy')]",
+                  "Admin Connection String": "[concat('Encrypt=True;TrustServerCertificate=False;Data Source=', reference(concat('Microsoft.Sql/servers/', variables('webDbServerNameTidy'))).fullyQualifiedDomainName, ',1433;Initial Catalog=master;User Id=', parameters('web.sqlserver.login'), ';Password=', parameters('web.sqlserver.password'), ';')]"
+                }
+              },
+              {
                 "packageUri": "[parameters('cm.msdeploy.packageurl')]",
                 "dbType": "SQL",
                 "connectionString": "[concat('Data Source=tcp:', reference(concat('Microsoft.Sql/servers/', variables('dbServerNameTidy'))).fullyQualifiedDomainName, ',1433;Initial Catalog=master;User Id=', parameters('sqlserver.login'), '@', variables('dbServerNameTidy'), ';Password=', parameters('sqlserver.password'), ';')]",
@@ -528,13 +557,19 @@
                   "Web DB Password": "[parameters('cm.web.sqldatabase.password')]",
                   "Web Admin Connection String": "[concat('Encrypt=True;TrustServerCertificate=False;Data Source=', reference(concat('Microsoft.Sql/servers/', variables('webDbServerNameTidy'))).fullyQualifiedDomainName, ',1433;Initial Catalog=',variables('webDbNameTidy'),';User Id=', parameters('web.sqlserver.login'), ';Password=', parameters('web.sqlserver.password'), ';')]",
                   "Web Connection String": "[concat('Encrypt=True;TrustServerCertificate=False;Data Source=', reference(concat('Microsoft.Sql/servers/', variables('webDbServerNameTidy'))).fullyQualifiedDomainName, ',1433;Initial Catalog=',variables('webDbNameTidy'),';User Id=', parameters('cm.web.sqldatabase.username'), ';Password=', parameters('cm.web.sqldatabase.password'), ';')]",
-                  "Cloud Search Connection String": "[concat('serviceUrl=https://', variables('searchServiceNameTidy'), '.search.windows.net;apiVersion=', variables('searchApiVersion'), ';apiKey=', listAdminKeys(resourceId('Microsoft.Search/searchServices', variables('searchServiceNameTidy')), variables('searchApiVersion')).primaryKey)]",
+                  "Cloud Search Connection String": "[concat('serviceUrl=https://', variables('searchServiceNameTidy'), '.search.windows.net;apiVersion=', variables('searchApiVersion'), ';apiKey=', listAdminKeys(resourceId('Microsoft.Search/searchServices', variables('searchServiceNameTidy')), variables('searchManagementApiVersion')).primaryKey)]",
                   "Application Insights Instrumentation Key": "[reference(resourceId('Microsoft.Insights/Components', variables('appInsightsNameTidy'))).InstrumentationKey]",
                   "Application Insights Role": "CM",
                   "KeepAlive Url": "[concat('https://', reference(resourceId('Microsoft.Web/sites', variables('cmWebAppNameTidy'))).hostNames[0], '/sitecore/service/keepalive.aspx')]",
                   "License Xml": "[variables('licenseXml')]",
                   "IP Security Client IP": "[parameters('security.clientIp')]",
                   "IP Security Client IP Mask": "[parameters('security.clientIpMask')]"
+                }
+              },
+              {
+                "packageUri": "[parameters('SC2019-002-312864.msdeploy.packageurl')]",
+                "setParameters": {
+                  "Application Path": "[variables('cmWebAppNameTidy')]"
                 }
               }
             ]
@@ -597,7 +632,7 @@
                 "setParameters": {
                   "Application Path": "[variables('cdWebAppNameTidy')]"
                 }
-              },
+              },            
               {
                 "packageUri": "[parameters('cd.msdeploy.packageurl')]",
                 "dbType": "SQL",
@@ -613,12 +648,18 @@
                   "Web DB Password": "[parameters('cd.web.sqldatabase.password')]",
                   "Web Admin Connection String": "[concat('Encrypt=True;TrustServerCertificate=False;Data Source=', reference(concat('Microsoft.Sql/servers/', variables('webDbServerNameTidy'))).fullyQualifiedDomainName, ',1433;Initial Catalog=',variables('webDbNameTidy'),';User Id=', parameters('web.sqlserver.login'), ';Password=', parameters('web.sqlserver.password'), ';')]",
                   "Web Connection String": "[concat('Encrypt=True;TrustServerCertificate=False;Data Source=', reference(concat('Microsoft.Sql/servers/', variables('webDbServerNameTidy'))).fullyQualifiedDomainName, ',1433;Initial Catalog=',variables('webDbNameTidy'),';User Id=', parameters('cd.web.sqldatabase.username'), ';Password=', parameters('cd.web.sqldatabase.password'), ';')]",
-                  "Cloud Search Connection String": "[concat('serviceUrl=https://', variables('searchServiceNameTidy'), '.search.windows.net;apiVersion=', variables('searchApiVersion'), ';apiKey=', listAdminKeys(resourceId('Microsoft.Search/searchServices', variables('searchServiceNameTidy')), variables('searchApiVersion')).primaryKey)]",
+                  "Cloud Search Connection String": "[concat('serviceUrl=https://', variables('searchServiceNameTidy'), '.search.windows.net;apiVersion=', variables('searchApiVersion'), ';apiKey=', listAdminKeys(resourceId('Microsoft.Search/searchServices', variables('searchServiceNameTidy')), variables('searchManagementApiVersion')).primaryKey)]",
                   "Application Insights Instrumentation Key": "[reference(resourceId('Microsoft.Insights/Components', variables('appInsightsNameTidy'))).InstrumentationKey]",
                   "Application Insights Role": "CD",
                   "KeepAlive Url": "[concat('https://', reference(resourceId('Microsoft.Web/sites', variables('cdWebAppNameTidy'))).hostNames[0], '/sitecore/service/keepalive.aspx')]",
                   "Redis Connection String": "[concat(reference(variables('redisCacheNameTidy')).hostName, ':', reference(variables('redisCacheNameTidy')).sslPort, ',password=', listKeys(resourceId('Microsoft.Cache/Redis', variables('redisCacheNameTidy')), variables('redisApiVersion')).primaryKey, ',ssl=True,abortConnect=False')]",
                   "License Xml": "[variables('licenseXml')]"
+                }
+              },
+              {
+                "packageUri": "[parameters('SC2019-002-312864.msdeploy.packageurl')]",
+                "setParameters": {
+                  "Application Path": "[variables('cdWebAppNameTidy')]"
                 }
               }
             ]
@@ -740,15 +781,15 @@
     },
     {
       "type": "Microsoft.Search/searchServices",
-      "apiVersion": "[variables('searchApiVersion')]",
+      "apiVersion": "[variables('searchManagementApiVersion')]",
       "name": "[variables('searchServiceNameTidy')]",
       "location": "[parameters('location')]",
       "properties": {
-        "sku": {
-          "name": "[toLower(parameters('resourceSizes').SearchService.SkuName)]"
-        },
         "replicaCount": "[parameters('resourceSizes').SearchService.Replicas]",
         "partitionCount": "[parameters('resourceSizes').SearchService.Partitions]"
+      },
+      "sku": {
+        "name": "[toLower(parameters('resourceSizes').SearchService.SkuName)]"
       },
       "tags": {
         "provider": "[parameters('sitecoreTags').provider]"
